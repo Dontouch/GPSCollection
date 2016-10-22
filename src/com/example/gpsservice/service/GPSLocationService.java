@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.example.gpsservice.domain.GPSLocation;
+import com.example.gpsservice.domain.Result;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -15,9 +15,9 @@ public class GPSLocationService {
 
 	private Context mContext;
 	private static final String dbpath = Environment
-			.getExternalStorageDirectory().getPath() + "/result.db";
+			.getExternalStorageDirectory().getPath() + "/tracking.db";
 	private SQLiteDatabase db;
-	private List<GPSLocation> gpses = new LinkedList<GPSLocation>();
+	private List<Result> gpses = new LinkedList<Result>();
 
 	GPSLocationService(Context context) {
 		this.mContext = context;
@@ -28,8 +28,8 @@ public class GPSLocationService {
 		File f = new File(dbpath);
 		if (!f.exists()) {
 			db = SQLiteDatabase.openOrCreateDatabase(dbpath, null);
-			db.execSQL("create table tab_gps (infotype integer,latitude double,"
-					+ "longitude double,altitude double,direct float,speed float,gpstime date);");
+			db.execSQL("create table gps_t (user_id integer,time long,"
+					+ "location long,cur_date date);");
 		} else
 			db = SQLiteDatabase.openDatabase(dbpath, null,
 					SQLiteDatabase.OPEN_READWRITE);
@@ -40,18 +40,15 @@ public class GPSLocationService {
 		db.close();
 	}
 
-	public boolean saveToLocal(GPSLocation gpsLocation) {
+	public boolean saveToLocal(Result gps) {
 
-		gpses.add(gpsLocation);
+		gpses.add(gps);
 		boolean result = true;
 		try {
 			String StrSql = String
-					.format("insert into tab_gps (infotype,latitude,longitude,altitude,direct,speed,gpstime) values (%d,%.1f,%.1f,%.1f,%.1f,%.1f,'%s')",
-							gpsLocation.getInfoType(),
-							gpsLocation.getLatitude(),
-							gpsLocation.getLongitude(),
-							gpsLocation.getAltitude(), gpsLocation.getDirect(),
-							gpsLocation.getSpeed(), gpsLocation.getGpsTime());
+					.format("insert into gps_t (user_id,time,location,cur_date) values (%d,%d,%d,'%s')",
+							gps.getUser_id(), gps.getTime(), gps.getLocation(),
+							gps.getCur_date());
 			db.execSQL(StrSql);
 			result = true;
 		} catch (Exception e) {
@@ -62,30 +59,31 @@ public class GPSLocationService {
 		return result;
 	}
 
-	public List<GPSLocation> findAll() {
+	public List<Result> findAll() {
 		return gpses;
 	}
 
 	/**
-	 * finish  
-	 * @param gpsLocations 
+	 * finish
+	 * 
+	 * @param gpsLocations
 	 * @return
 	 */
-	public boolean saveToServer(List<GPSLocation> gpsLocations) {
+	public boolean saveToServer(List<Result> gpses) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	public boolean delete(List<GPSLocation> gpsLocations) {
+	public boolean delete(List<Result> gpses) {
 		gpses = null;
-		gpses = new LinkedList<GPSLocation>();
+		gpses = new LinkedList<Result>();
 
 		boolean result = true;
 		try {
-			for (GPSLocation gpsLocation : gpsLocations) {
+			for (Result gps : gpses) {
 				String StrSql = String
-						.format("delete from tab_gps where gpstime ="
-								+ gpsLocation.getGpsTime());
+						.format("delete from gps_t where cur_date ="
+								+ gps.getCur_date());
 				db.execSQL(StrSql);
 			}
 			result = true;

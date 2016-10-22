@@ -1,10 +1,7 @@
 package com.example.gpsservice.utils;
 
 import java.text.SimpleDateFormat;
-import java.util.Locale;
-
-import android.text.StaticLayout;
-import android.text.TextUtils;
+import java.util.Date;
 
 import com.amap.api.location.AMapLocation;
 import com.example.gpsservice.domain.Result;
@@ -18,60 +15,91 @@ public class LocationUtil {
 	 * @return
 	 */
 	public static Result getResult(AMapLocation location) {
-		if (null == location) {
+		if (null == location)
 			return null;
-		}
-		StringBuffer location_tmp;
-		StringBuffer time_tmp;
+
+		Long location_tmp = null;
+		Long time_tmp = null;
 		Result result = null;
 
 		if (location.getErrorCode() == 0) {
 
-		  location_tmp = Location2String(location.getLongitude(),
+			location_tmp = Location2Long(location.getLongitude(),
 					location.getLatitude());
 
 			if (!location.getProvider().equalsIgnoreCase(
 					android.location.LocationManager.GPS_PROVIDER)) {
 
-				time_tmp = Time2String(formatUTC(location.getTime(),
-						"yyyy-MM-dd HH:mm:ss:sss"));
+				time_tmp = Time2Long(new Date(location.getTime()));
+
+				new Date(location.getTime());
 			}
-		}
-		
-//		result = new Result((use_id, time, location);
-		
-		
 
-		return null;
-	}
+			result = new Result();
+			result.setUser_id(1);
+			result.setTime(time_tmp);
+			result.setLocation(location_tmp);
 
-	private static SimpleDateFormat sdf = null;
+			
+			result.setCur_date(new Date());
 
-	public synchronized static String[] formatUTC(long l, String strPattern) {
-		if (TextUtils.isEmpty(strPattern)) {
-			strPattern = "yyyy-MM-dd HH:mm:ss";
-		}
-		if (sdf == null) {
-			try {
-				sdf = new SimpleDateFormat(strPattern, Locale.CHINA);
-			} catch (Throwable e) {
-			}
 		} else {
-			sdf.applyPattern(strPattern);
+			return null;
 		}
-		if (l <= 0l) {
-			l = System.currentTimeMillis();
-		}
-		// return sdf == null ? "NULL" : sdf.format(l);
-		return null;
+
+		return result;
 	}
 
-	private static StringBuffer Location2String(double longitude, double latitude) {
-		return null;
+	private static Long Location2Long(double longitude, double latitude) {
+		if (longitude == 0 || latitude == 0)
+			return null;
+
+		/**
+		 * tag longitude in China 73¡ã33¡äE ~ 135¡ã02¡ä30¡ä¡äE latitude in China
+		 * 3¡ã51¡äN ~53¡ã33¡äN
+		 * 
+		 * longitude_range 135¡ã05¡ä - 73¡ã33¡ä convert ¡ä (135*60+05) - (73 *60 +
+		 * 33) = 3692 latitude_range 53¡ã33¡ä - 3¡ã51¡ä convert ¡ä (53*60 + 33 ) -
+		 * (3*60+51) = 2982
+		 * 
+		 * cut longitude ¡ä cut latitude ¡ä
+		 * 
+		 * param longitude - 73¡ã33¡ä(73 *60 + 33) column index
+		 * 
+		 * param latitude - 3¡ã51¡ä (3*60+51) row index
+		 * 
+		 * final index (result) row* 3692 + column ;
+		 * 
+		 * double r=¶È+·Ö/60+Ãë/3600
+		 * 
+		 * 
+		 */
+		double start_longitude = 73.0 + 33.0 / 60.0;
+		double start_latitude = 3.0 + 51.0 / 60.0;
+		double end_longitude = 135.0 + 2.0 / 60.0 + 30.0 / 3600.0;
+
+		long longitude_all = (long) ((end_longitude - start_longitude) * 3600.0);
+
+		long column = (long) ((longitude - start_longitude) * 3600.0);
+		long row = (long) ((latitude - start_latitude) * 3600.0);
+
+		return row * longitude_all + column;
+
 	}
 
-	private static StringBuffer Time2String(String[] times) {
-		return null;
+	private static Long Time2Long(Date date) {
+		if (date == null)
+			return null;
+
+		date.setTime(date.getTime() - date.getTime() % 1000);
+		Date tmp = new Date();
+		tmp.setHours(0);
+		tmp.setMinutes(0);
+		tmp.setSeconds(0);
+		tmp.setTime(tmp.getTime() - tmp.getTime() % 1000);
+		long second_interval = date.getTime() - tmp.getTime();
+		second_interval /= 5000;
+		return second_interval;
 	}
 
 }

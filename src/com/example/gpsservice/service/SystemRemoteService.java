@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import com.example.gpsservice.domain.GPSLocation;
+import com.example.gpsservice.domain.Result;
 import com.example.gpsservice.utils.Constant;
 
 import android.app.Service;
@@ -50,7 +50,7 @@ public class SystemRemoteService extends Service{
             public void run()
             {
                 // 保存本地的GPS数据到远程服务器
-                List<GPSLocation> gpsLocations=gpsLocationService.findAll();
+                List<Result> gpsLocations=gpsLocationService.findAll();
                 boolean flag=gpsLocationService.saveToServer(gpsLocations);
                 if(flag)
                 {
